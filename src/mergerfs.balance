@@ -20,6 +20,7 @@ import errno
 import fnmatch
 import os
 import subprocess
+import shlex
 import sys
 
 
@@ -116,17 +117,16 @@ def execute(args):
     return subprocess.call(args)
 
 
-def move_file(src,dst,relfile):
+def move_file_args(src,dst,relfile):
     frompath = os.path.join(src,'./',relfile)
     topath   = dst+'/'
-    args = ['rsync',
-            '-alXA',
+    return ['rsync',
+            '-alvHAXWES',
             '--relative',
             '--progress',
             '--remove-source-files',
             frompath,
             topath]
-    return execute(args)
 
 
 def freespace_percentage(srcmounts):
@@ -160,6 +160,11 @@ def human_to_bytes(s):
         i = int(s)
 
     return i
+
+
+def print_args(args):
+    quoted = [shlex.quote(arg.decode()) for arg in args]
+    print(' '.join(quoted))
 
 
 def buildargparser():
@@ -255,7 +260,8 @@ def main():
                 break;
             seen.add(relfilepath)
             print('from: {}\nto:   {}'.format(fromdrive,todrive))
-            rv = move_file(fromdrive,todrive,relfilepath)
+            args = move_file_args(fromdrive,todrive,relfilepath)
+            print_args(args)
             if rv:
                 break;
             l = freespace_percentage(srcmounts)
